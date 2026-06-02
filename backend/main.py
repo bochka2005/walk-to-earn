@@ -7,7 +7,7 @@ from geopy.distance import geodesic
 
 from auth import extract_user_id, validate_init_data
 from config import ADMIN_IDS, METERS_PER_COIN, MIN_PING_INTERVAL_S, SPEED_LIMIT_KMH
-from schemas import AdminConsoleRequest, WalkPingRequest
+from schemas import AdminConsoleRequest, UserRequest, WalkPingRequest
 from storage import storage
 
 app = FastAPI(title="Walk to Earn")
@@ -77,6 +77,21 @@ async def walk_ping(body: WalkPingRequest):
         "total_coins": user.balance,
         "distance_m": round(distance_m, 2),
         "speed_kmh": round(speed_kmh, 2),
+    }
+
+
+@app.post("/user")
+async def get_user(body: UserRequest):
+    parsed = validate_init_data(body.init_data)
+    if parsed is None:
+        raise HTTPException(status_code=401, detail="Invalid init_data")
+    user_id = extract_user_id(parsed)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid user data")
+    user = await storage.get_or_create(user_id)
+    return {
+        "balance": user.balance,
+        "total_distance_m": round(user.total_distance_m, 2),
     }
 
 

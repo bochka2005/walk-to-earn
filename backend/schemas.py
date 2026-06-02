@@ -10,3 +10,7 @@ class WalkPingRequest(BaseModel):
 class AdminConsoleRequest(BaseModel):
     init_data: str
     command: str
+
+
+class UserRequest(BaseModel):
+    init_data: str

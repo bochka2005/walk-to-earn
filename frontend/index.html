@@ -286,6 +286,24 @@
                 walkBtn.className = 'btn btn-start';
             }
 
+            async function fetchUser() {
+                var initData = TG ? TG.initData : '';
+                if (!initData) return;
+                try {
+                    var res = await fetch('/user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ init_data: initData }),
+                    });
+                    var data = await res.json();
+                    if (res.ok) {
+                        balanceEl.textContent = data.balance;
+                        distDisplay.textContent = data.total_distance_m.toFixed(1);
+                    }
+                } catch (_) {}
+            }
+            fetchUser();
+
             walkBtn.addEventListener('click', function () {
                 if (walking) stopWalking();
                 else startWalking();
