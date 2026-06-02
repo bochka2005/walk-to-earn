@@ -16,10 +16,10 @@ from fastapi import FastAPI, HTTPException       # FastAPI — веб-фрейм
 from fastapi.responses import FileResponse       # Отдаёт файл как HTTP-ответ
 from geopy.distance import geodesic              # Расчёт расстояния между координатами
 
-from backend.auth import extract_user_id, validate_init_data    # Проверка initData
-from backend.config import ADMIN_IDS, METERS_PER_COIN, MIN_PING_INTERVAL_S, SPEED_LIMIT_KMH
-from backend.schemas import AdminConsoleRequest, ShopBuyRequest, WalkPingRequest
-from backend.storage import BUFFS, storage
+from auth import extract_user_id, validate_init_data    # Проверка initData
+from config import ADMIN_IDS, METERS_PER_COIN, MIN_PING_INTERVAL_S, SPEED_LIMIT_KMH
+from schemas import AdminConsoleRequest, ShopBuyRequest, WalkPingRequest
+from storage import BUFFS, storage
 
 
 # Создаём FastAPI-приложение. title — название, видно в Swagger (/docs)

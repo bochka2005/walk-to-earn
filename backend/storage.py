@@ -12,7 +12,7 @@ from dataclasses import dataclass, field  # dataclass — сокращённая
 
 import asyncpg    # Асинхронный драйвер PostgreSQL (подключается к БД без блокировки сервера)
 
-from backend.config import DATABASE_URL   # Строка подключения к БД из конфига
+from config import DATABASE_URL   # Строка подключения к БД из конфига
 
 
 # Словарь со всеми доступными баффами (предметами в магазине).

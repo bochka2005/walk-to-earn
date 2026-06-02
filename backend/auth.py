@@ -12,7 +12,7 @@ import hmac             # Алгоритм HMAC — хэш с секретным
 import json             # Работа с JSON (разбираем строку с данными пользователя)
 from urllib.parse import parse_qsl  # Разбирает строку вида "ключ=знач&ключ2=знач2"
 
-from backend.config import BOT_TOKEN  # Берём токен бота из config.py
+from config import BOT_TOKEN  # Берём токен бота из config.py
 
 
 def validate_init_data(init_data: str) -> dict | None:
