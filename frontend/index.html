@@ -1,654 +1,196 @@
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- Файл: index.html                                                 -->
-<!-- Назначение: Фронтенд Telegram WebApp — то, что видит игрок.      -->
-<!-- Что происходит: Загружается в Telegram WebView, показывает        -->
-<!-- баланс, кнопку прогулки, магазин баффов. Через JS отправляет     -->
-<!-- GPS-координаты на бэкенд каждые 15 секунд.                       -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
-
 <!DOCTYPE html>
-<!-- Говорит браузеру, что это HTML5 -->
 <html lang="en">
-<!-- Корневой тег. lang="en" — язык страницы (английский) -->
-
 <head>
-    <!-- head — служебная часть: настройки, стили, заголовок -->
-
-    <meta charset="UTF-8" />
-    <!-- Кодировка: UTF-8 (чтобы работали все символы) -->
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <!-- Настройка отображения на мобильных:
-         width=device-width     — ширина как у экрана
-         initial-scale=1.0     — без масштабирования
-         user-scalable=no      — запретить зуум пальцами (чтобы не ломалось) -->
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Walk to Earn</title>
-    <!-- Заголовок страницы (виден в табе браузера) -->
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем SDK Telegram WebApp — даёт доступ к
-         window.Telegram.WebApp.initData и другим функциям Telegram -->
-
     <style>
-        /* ═══════════════════════════════════════════ */
-        /* CSS — СТИЛИ (как выглядит страница)          */
-        /* ═══════════════════════════════════════════ */
-
-        /* Сброс стандартных отступов для всех элементов */
-        *, *::before, *::after {
-            margin: 0;      /* Убрать внешние отступы */
-            padding: 0;     /* Убрать внутренние отступы */
-            box-sizing: border-box;  /* Ширина включает padding и border */
-        }
-
-        /* Стили для всей страницы */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            /* Шрифты: сначала системные для Apple, потом для Windows, потом запасной */
-            background: #0f0f1a;        /* Тёмный фон (почти чёрный с синевой) */
-            color: #e0e0e0;             /* Светлый цвет текста */
-            min-height: 100vh;          /* Минимальная высота на весь экран */
-            display: flex;              /* Flex-контейнер (гибкая разметка) */
-            flex-direction: column;     /* Элементы колонкой (сверху вниз) */
-            align-items: center;        /* Выровнять по центру по горизонтали */
-            padding: 20px 16px;         /* Отступы: сверху 20px, по бокам 16px */
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px;
         }
-
-        /* Контейнер — ограничивает ширину контента */
-        .container {
-            max-width: 400px;   /* Не шире 400px (как мобильный экран) */
-            width: 100%;        /* Но может быть уже */
-        }
-
-        /* Карточка баланса (верхний блок с монетами) */
+        .container { max-width: 400px; width: 100%; }
         .balance-card {
-            background: linear-gradient(135deg, #1a1a3e 0%, #16213e 100%);
-            /* Градиент: сверху-слева тёмно-фиолетовый, снизу-справа тёмно-синий */
-            border: 1px solid rgba(46, 154, 254, 0.2);  /* Тонкая голубая рамка */
-            border-radius: 20px;    /* Скруглённые углы */
-            padding: 24px;          /* Внутренние отступы */
-            text-align: center;     /* Текст по центру */
-            margin-bottom: 20px;    /* Отступ снизу */
-            user-select: none;      /* Запретить выделение текста (для админ-кликера) */
-            -webkit-user-select: none;  /* То же для Safari */
-            cursor: default;        /* Обычный курсор (не pointer) */
+            background: linear-gradient(135deg, #1a1a3e, #16213e);
+            border: 1px solid rgba(46, 154, 254, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
         }
-
-        /* Надпись "Your Balance" */
         .balance-label {
-            font-size: 13px;                    /* Маленький шрифт */
-            text-transform: uppercase;           /* Все буквы ЗАГЛАВНЫЕ */
-            letter-spacing: 2px;                 /* Разрядка между буквами */
-            color: rgba(255,255,255,0.4);        /* Полупрозрачный белый */
-            margin-bottom: 8px;                  /* Отступ снизу */
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 8px;
         }
-
-        /* Число баланса */
         .balance-value {
-            font-size: 48px;        /* Большой шрифт (48px) */
-            font-weight: 700;       /* Жирный (700 = bold) */
-            color: #2e9afe;         /* Голубой цвет */
-            letter-spacing: -1px;   /* Чуть прижать буквы друг к другу */
-            transition: transform 0.15s;  /* Плавное изменение при нажатии */
+            font-size: 48px;
+            font-weight: 700;
+            color: #2e9afe;
+            letter-spacing: -1px;
         }
-
-        /* При нажатии на баланс — эффект уменьшения */
-        .balance-value:active {
-            transform: scale(0.95);  /* Уменьшиться до 95% */
-        }
-
-        /* Карточка статуса (Idle / Walking / Too fast) */
         .status-card {
-            background: #16162a;            /* Тёмный фон */
-            border-radius: 16px;            /* Скруглённые углы */
-            padding: 20px;                  /* Отступы внутри */
-            margin-bottom: 16px;            /* Отступ снизу */
-            display: flex;                  /* Flex — элементы в ряд */
-            justify-content: space-between; /* Раздвинуть по краям */
-            align-items: center;            /* По центру по вертикали */
+            background: #16162a;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
-        /* Текст "Status" */
-        .status-label {
-            font-size: 14px;
-            color: rgba(255,255,255,0.5);  /* Полупрозрачный */
-        }
-
-        /* Бейдж статуса (сам статус) */
+        .status-label { font-size: 14px; color: rgba(255,255,255,0.5); }
         .status-value {
             font-size: 14px;
-            font-weight: 600;       /* Полужирный */
-            padding: 6px 14px;      /* Отступы внутри бейджа */
-            border-radius: 8px;     /* Скругления */
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 8px;
         }
-
-        /* Состояние: idle (стоим на месте) */
-        .status-value.idle {
-            background: rgba(255,255,255,0.06);  /* Чуть заметный фон */
-            color: rgba(255,255,255,0.4);        /* Тусклый текст */
-        }
-
-        /* Состояние: walking (идём) */
-        .status-value.walking {
-            background: rgba(46,154,254,0.15);   /* Голубой полупрозрачный фон */
-            color: #2e9afe;                      /* Ярко-голубой текст */
-        }
-
-        /* Состояние: speed_limit_exceeded (превышение скорости) */
-        .status-value.limited {
-            background: rgba(255,170,0,0.15);    /* Оранжевый фон */
-            color: #ffaa00;                      /* Оранжевый текст */
-        }
-
-        /* Кнопка (Start Walking / Stop Walking) */
+        .status-value.idle { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+        .status-value.walking { background: rgba(46,154,254,0.15); color: #2e9afe; }
+        .status-value.limited { background: rgba(255,170,0,0.15); color: #ffaa00; }
         .btn {
-            width: 100%;        /* На всю ширину */
-            padding: 18px;      /* Большие отступы (высокая кнопка) */
-            border: none;       /* Без рамки */
+            width: 100%;
+            padding: 18px;
+            border: none;
             border-radius: 16px;
             font-size: 17px;
             font-weight: 600;
-            cursor: pointer;    /* Курсор-рука (кликабельно) */
-            transition: opacity 0.2s, transform 0.1s;  /* Плавность */
+            cursor: pointer;
+            transition: transform 0.1s;
             margin-bottom: 24px;
         }
-
-        /* При нажатии на кнопку */
-        .btn:active {
-            transform: scale(0.97);  /* Чуть вдавливается */
-        }
-
-        /* Кнопка "Start Walking" (зелёно-голубая) */
-        .btn-start {
-            background: #2e9afe;    /* Голубой фон */
-            color: #fff;            /* Белый текст */
-        }
-
-        /* Кнопка "Stop Walking" (красноватая) */
+        .btn:active { transform: scale(0.97); }
+        .btn-start { background: #2e9afe; color: #fff; }
         .btn-stop {
-            background: rgba(255,255,255,0.08);   /* Чуть светлый фон */
-            color: #ff4757;                        /* Красный текст */
-            border: 1px solid rgba(255,71,87,0.2); /* Красная рамка */
+            background: rgba(255,255,255,0.08);
+            color: #ff4757;
+            border: 1px solid rgba(255,71,87,0.2);
         }
-
-        /* Кнопка в неактивном состоянии (disabled) */
-        .btn-start:disabled, .btn-stop:disabled {
-            opacity: 0.4;           /* Полупрозрачная */
-            cursor: not-allowed;    /* Курсор "нельзя" */
-        }
-
-        /* Сетка статистики (две колонки: дистанция и скорость) */
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .stats-grid {
-            display: grid;              /* Grid-разметка */
-            grid-template-columns: 1fr 1fr;  /* Две равные колонки */
-            gap: 12px;                  /* Промежуток между ячейками */
-            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
-
-        /* Один блок статистики */
         .stat-box {
             background: #16162a;
             border-radius: 14px;
             padding: 16px;
             text-align: center;
         }
-
-        /* Цифра статистики */
-        .stat-value {
-            font-size: 22px;
-            font-weight: 700;
-            color: #e0e0e0;
-        }
-
-        /* Подпись под цифрой */
-        .stat-label {
-            font-size: 12px;
-            color: rgba(255,255,255,0.35);  /* Едва заметный текст */
-            margin-top: 4px;
-        }
-
-        /* Секция магазина (баффы) */
-        .buffs-section {
-            background: #16162a;
-            border-radius: 16px;
-            padding: 20px;
-        }
-
-        /* Заголовок "Boosts" */
-        .buffs-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 12px;
-        }
-
-        /* Список баффов */
-        .buffs-list {
-            display: flex;              /* Элементы в ряд (flex) */
-            flex-direction: column;     /* Но колонкой (сверху вниз) */
-            gap: 10px;                  /* Промежуток между баффами */
-        }
-
-        /* Один бафф в списке */
-        .buff-item {
-            display: flex;
-            justify-content: space-between;  /* Название слева, цена справа */
-            align-items: center;
-            padding: 12px 14px;
-            background: rgba(255,255,255,0.04);  /* Чуть подсвеченный фон */
-            border-radius: 10px;
-            cursor: pointer;                    /* Кликабельно */
-            transition: background 0.15s;        /* Плавное изменение фона */
-            border: 1px solid transparent;      /* Прозрачная рамка (для active) */
-        }
-
-        /* При нажатии на бафф */
-        .buff-item:active {
-            background: rgba(46,154,254,0.1);   /* Голубой фон */
-            transform: scale(0.98);              /* Чуть уменьшается */
-        }
-
-        /* Активный бафф (уже куплен и работает) */
-        .buff-item.active {
-            border-color: rgba(46,154,254,0.4);  /* Голубая рамка */
-            background: rgba(46,154,254,0.08);   /* Голубой фон */
-        }
-
-        /* Цена купленного баффа — бледнеет */
-        .buff-item.owned .buff-price {
-            color: rgba(255,255,255,0.25);  /* Едва видна */
-        }
-
-        /* Блок с информацией о баффе (название + описание) */
-        .buff-info {
-            display: flex;
-            flex-direction: column;  /* Название сверху, описание снизу */
-        }
-
-        /* Название баффа */
-        .buff-name {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Описание баффа */
-        .buff-desc {
-            font-size: 12px;
-            color: rgba(255,255,255,0.35);
-            margin-top: 2px;
-        }
-
-        /* Цена баффа */
-        .buff-price {
-            font-size: 14px;
-            font-weight: 600;
-            color: #2e9afe;          /* Голубая */
-            transition: color 0.2s;  /* Плавно бледнеет при покупке */
-        }
-
-        /* Название купленного баффа — бледнеет */
-        .buff-item.owned .buff-name {
-            color: rgba(255,255,255,0.4);
-        }
-
-        /* Всплывающее уведомление (toast) — показывается на пару секунд */
+        .stat-value { font-size: 22px; font-weight: 700; color: #e0e0e0; }
+        .stat-label { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 4px; }
         .toast {
-            position: fixed;            /* Фиксированная позиция (не скроллится) */
-            bottom: 30px;               /* 30px от нижнего края */
-            left: 50%;                  /* По центру по горизонтали */
-            transform: translateX(-50%) translateY(80px);  /* Сдвинуто вниз (скрыто) */
-            background: rgba(22,22,42,0.95);  /* Почти непрозрачный тёмный */
-            border: 1px solid rgba(46,154,254,0.2);  /* Голубая рамка */
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: rgba(22,22,42,0.95);
+            border: 1px solid rgba(46,154,254,0.2);
             border-radius: 12px;
             padding: 14px 24px;
             font-size: 14px;
             color: #e0e0e0;
-            opacity: 0;                 /* Полностью прозрачный (скрыт) */
-            transition: all 0.3s;       /* Плавное появление/исчезание */
-            pointer-events: none;       /* Не перехватывает клики (сквозь него кликают) */
-            backdrop-filter: blur(12px); /* Размытие фона под ним */
-            z-index: 100;               /* Поверх всего */
-            white-space: nowrap;        /* Не переносить текст */
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 100;
+            white-space: nowrap;
         }
-
-        /* Когда toast виден — добавляем класс visible */
-        .toast.visible {
-            opacity: 1;                 /* Становится непрозрачным */
-            transform: translateX(-50%) translateY(0);  /* Выезжает на место */
-        }
-
-        /* Адаптация под узкие экраны (меньше 420px ширины) */
+        .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
         @media (max-width: 420px) {
-            body { padding: 12px; }                /* Меньше отступы */
-            .balance-value { font-size: 38px; }    /* Баланс чуть меньше */
+            body { padding: 12px; }
+            .balance-value { font-size: 38px; }
         }
     </style>
 </head>
-
 <body>
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- HTML — ТЕЛО СТРАНИЦЫ                        -->
-    <!-- ═══════════════════════════════════════════ -->
-
     <div class="container">
-        <!-- Главный контейнер, ограничивающий ширину -->
-
-        <!-- Карточка баланса (по ней 5 кликов — админ-консоль) -->
-        <div class="balance-card" id="balanceCard">
-            <!-- id="balanceCard" — чтобы JS мог найти этот элемент -->
+        <div class="balance-card">
             <div class="balance-label">Your Balance</div>
-            <!-- Надпись "Your Balance" -->
             <div class="balance-value" id="balanceDisplay">0</div>
-            <!-- Число баланса, изначально 0. id="balanceDisplay" — для JS -->
         </div>
 
-        <!-- Строка статуса (Idle / Walking / Too fast) -->
         <div class="status-card">
             <span class="status-label">Status</span>
-            <!-- Подпись "Status" -->
             <span class="status-value idle" id="statusBadge">Idle</span>
-            <!-- Сам статус. Изначально "Idle". id="statusBadge" — для JS -->
         </div>
 
-        <!-- Кнопка старта/остановки прогулки -->
         <button class="btn btn-start" id="walkBtn">Start Walking</button>
-        <!-- id="walkBtn" — для JS и CSS -->
 
-        <!-- Сетка с дистанцией и скоростью -->
         <div class="stats-grid">
             <div class="stat-box">
                 <div class="stat-value" id="distDisplay">0.0</div>
-                <!-- Дистанция в метрах -->
                 <div class="stat-label">Distance (m)</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="speedDisplay">0.0</div>
-                <!-- Скорость в км/ч -->
                 <div class="stat-label">Speed (km/h)</div>
-            </div>
-        </div>
-
-        <!-- Магазин баффов -->
-        <div class="buffs-section">
-            <div class="buffs-title">Boosts</div>  <!-- Заголовок -->
-            <div class="buffs-list">               <!-- Список баффов -->
-
-                <!-- Бафф: x2 Coins -->
-                <div class="buff-item" data-buff-id="x2_coins" data-price="500">
-                    <!-- data-buff-id — JS использует, чтобы понять, что купили -->
-                    <!-- data-price — цена баффа -->
-                    <div class="buff-info">
-                        <span class="buff-name">x2 Coins</span>
-                        <span class="buff-desc">Double coins for 30 min</span>
-                    </div>
-                    <span class="buff-price">500</span>  <!-- Цена -->
-                </div>
-
-                <!-- Бафф: Speed Boost -->
-                <div class="buff-item" data-buff-id="speed_boost" data-price="300">
-                    <div class="buff-info">
-                        <span class="buff-name">Speed Boost</span>
-                        <span class="buff-desc">Speed limit 25 km/h for 6 min</span>
-                    </div>
-                    <span class="buff-price">300</span>
-                </div>
-
-                <!-- Бафф: Auto-walk -->
-                <div class="buff-item" data-buff-id="auto_walk" data-price="1000">
-                    <div class="buff-info">
-                        <span class="buff-name">Auto-walk</span>
-                        <span class="buff-desc">Passive income 1 coin / min</span>
-                    </div>
-                    <span class="buff-price">1000</span>
-                </div>
-
             </div>
         </div>
     </div>
 
-    <!-- Всплывающее уведомление (скрыто, пока JS не добавит класс visible) -->
     <div class="toast" id="toast"></div>
 
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- JAVASCRIPT — ЛОГИКА ПРИЛОЖЕНИЯ              -->
-    <!-- ═══════════════════════════════════════════ -->
-
     <script>
-        // Весь JS обёрнут в самовызывающуюся функцию (function(){...})()
-        // Это делается, чтобы переменные не вытекали в глобальную область.
         (function () {
+            var TG = window.Telegram?.WebApp;
+            if (TG) { TG.ready(); TG.expand(); }
 
-            // ── Telegram WebApp API ──
+            var balanceEl = document.getElementById('balanceDisplay');
+            var statusBadge = document.getElementById('statusBadge');
+            var walkBtn = document.getElementById('walkBtn');
+            var distDisplay = document.getElementById('distDisplay');
+            var speedDisplay = document.getElementById('speedDisplay');
+            var toastEl = document.getElementById('toast');
 
-            // Получаем объект Telegram WebApp (если есть).
-            // ?. — опциональная цепочка: если window.Telegram === undefined,
-            // то не падаем, а просто TG будет undefined.
-            const TG = window.Telegram?.WebApp;
-
-            // Если WebApp доступен (мы внутри Telegram)
-            if (TG) {
-                TG.ready();   // Сообщаем Telegram, что страница загружена
-                TG.expand();  // Разворачиваем на весь экран (убираем шапку)
-            }
-
-            // ── Ссылки на HTML-элементы (находим по ID) ──
-
-            const balanceEl = document.getElementById('balanceDisplay');
-            // Элемент, показывающий количество монет
-            const statusBadge = document.getElementById('statusBadge');
-            // Элемент статуса (Idle / Walking / Too fast)
-            const walkBtn = document.getElementById('walkBtn');
-            // Кнопка Start / Stop Walking
-            const distDisplay = document.getElementById('distDisplay');
-            // Элемент дистанции
-            const speedDisplay = document.getElementById('speedDisplay');
-            // Элемент скорости
-            const toastEl = document.getElementById('toast');
-            // Всплывающее уведомление
-            const balanceCard = document.getElementById('balanceCard');
-            // Карточка баланса (для админ-пасхалки)
-            const buffItems = document.querySelectorAll('.buff-item');
-            // Все элементы баффов в магазине (querySelectorAll — ищет по CSS-классу)
-
-            // ── Переменные состояния ──
-
-            let walking = false;         // Идёт ли прогулка сейчас
-            let intervalId = null;       // ID интервала (setInterval)
-            let watchId = null;          // ID GPS-наблюдателя (watchPosition)
-            let currentPos = null;       // Текущая GPS-позиция {lat, lon}
-            let lastPingResponse = null; // Последний ответ от сервера (для обновления UI)
-
-            // Для админ-пасхалки (5 кликов по балансу)
-            let clickCount = 0;          // Сколько раз кликнули подряд
-            let clickTimer = null;       // Таймер сброса счётчика кликов
-            let activeBuffs = [];        // Список активных баффов (их ID)
-
-            // ── Функция: показать всплывающее уведомление ──
+            var walking = false;
+            var intervalId = null;
+            var watchId = null;
+            var currentPos = null;
+            var lastPingResponse = null;
 
             function showToast(msg) {
-                toastEl.textContent = msg;           // Вставляем текст
-                toastEl.classList.add('visible');    // Добавляем класс — появляется
-
-                clearTimeout(toastEl._hide);          // Отменяем прошлый таймер (если был)
-                // Ставим таймер на 2.2 секунды — через это время уведомление скроется
-                toastEl._hide = setTimeout(() => toastEl.classList.remove('visible'), 2200);
+                toastEl.textContent = msg;
+                toastEl.classList.add('visible');
+                clearTimeout(toastEl._hide);
+                toastEl._hide = setTimeout(function () {
+                    toastEl.classList.remove('visible');
+                }, 2200);
             }
-
-            // ── Функция: установить статус (цвет + текст) ──
 
             function setStatus(type, text) {
-                // type — класс CSS: "idle", "walking" или "limited"
-                // text — что написать (например "Walking")
-                statusBadge.className = 'status-value ' + type;  // Меняем класс
-                statusBadge.textContent = text;                   // Меняем текст
+                statusBadge.className = 'status-value ' + type;
+                statusBadge.textContent = text;
             }
-
-            // ── Функция: обновить отображение баффов (активные подсветить) ──
-
-            function updateBuffsUI(buffs) {
-                activeBuffs = buffs || [];  // Сохраняем список активных (или пустой)
-
-                // Для каждого элемента баффа в магазине
-                buffItems.forEach(function (el) {
-                    var id = el.dataset.buffId;  // data-buff-id (например "x2_coins")
-
-                    // Если этот бафф есть в списке активных
-                    if (activeBuffs.indexOf(id) !== -1) {
-                        el.classList.add('active');  // Подсветить рамкой
-                        el.classList.add('owned');   // Сделать цену бледной
-                    } else {
-                        el.classList.remove('active');
-                        el.classList.remove('owned');
-                    }
-                });
-            }
-
-            // ── Функция: обновить весь UI после ответа сервера ──
 
             function updateUI(data) {
-                balanceEl.textContent = data.total_coins ?? 0;  // Обновить баланс
+                balanceEl.textContent = data.total_coins ?? 0;
                 distDisplay.textContent = (data.distance_m ?? 0).toFixed(1);
-                // Обновить дистанцию (toFixed(1) — один знак после запятой)
                 speedDisplay.textContent = (data.speed_kmh ?? 0).toFixed(1);
-                // Обновить скорость
-                updateBuffsUI(data.active_buffs);  // Обновить баффы
 
-                // Выбрать статус в зависимости от ответа
                 if (data.status === 'speed_limit_exceeded') {
-                    setStatus('limited', 'Too fast!');       // Превышение скорости
+                    setStatus('limited', 'Too fast!');
                 } else if (walking) {
-                    setStatus('walking', 'Walking');         // Идём
+                    setStatus('walking', 'Walking');
                 } else {
-                    setStatus('idle', 'Idle');               // Стоим
+                    setStatus('idle', 'Idle');
                 }
             }
-
-            // ── Функция: отправить пинг на сервер (POST /walk/ping) ──
 
             async function sendPing() {
-                // async — функция возвращает Promise, можно использовать await
-                if (!currentPos) return;  // Если позиция ещё не получена — выходим
+                if (!currentPos) return;
 
-                var initData = TG ? TG.initData : '';  // Берём initData из Telegram
-                if (!initData) {       // Если initData пустая
-                    showToast('No Telegram init data');
-                    return;
-                }
-
-                try {
-                    // fetch — встроенная в браузер функция для HTTP-запросов
-                    var res = await fetch('https://walk-to-earn.onrender.com/walk/ping', {
-                        method: 'POST',                          // HTTP-метод POST
-                        headers: { 'Content-Type': 'application/json' },
-                        // Говорим серверу, что шлём JSON
-                        body: JSON.stringify({                   // Превращаем объект в JSON
-                            init_data: initData,                  // initData от Telegram
-                            lat: currentPos.lat,                  // Текущая широта
-                            lon: currentPos.lon,                  // Текущая долгота
-                        }),
-                    });
-
-                    var data = await res.json();  // Разбираем ответ сервера из JSON
-
-                    if (!res.ok) {                // Если сервер вернул ошибку (не 200)
-                        showToast(data.detail || 'Ping error');
-                        return;
-                    }
-
-                    lastPingResponse = data;      // Запоминаем ответ
-                    updateUI(data);               // Обновляем экран
-
-                    if (data.coins_earned > 0) {  // Если заработали монеты
-                        showToast('+' + data.coins_earned + ' coins');  // Показать
-                    }
-                } catch (err) {                  // Если fetch упал (нет интернета и т.д.)
-                    showToast('Network error');
-                }
-            }
-
-            // ── Функция: вызвавается, когда GPS получил новую позицию ──
-
-            function onPosition(pos) {
-                // pos — объект от браузера с данными геолокации
-                currentPos = {               // Сохраняем координаты
-                    lat: pos.coords.latitude,   // Широта
-                    lon: pos.coords.longitude,  // Долгота
-                };
-            }
-
-            // ── Функция: вызывается при ошибке GPS ──
-
-            function onPositionError(err) {
-                var msg = 'GPS error';                   // Сообщение по умолчанию
-                if (err.code === 1) msg = 'GPS permission denied';  // Нет разрешения
-                else if (err.code === 2) msg = 'GPS unavailable';   // GPS выключен
-                else if (err.code === 3) msg = 'GPS timeout';       // Долго нет сигнала
-                showToast(msg);
-            }
-
-            // ── Функция: начать прогулку ──
-
-            function startWalking() {
-                if (walking) return;     // Если уже идём — ничего не делаем
-                walking = true;
-
-                setStatus('walking', 'Walking');     // Меняем статус
-                walkBtn.textContent = 'Stop Walking'; // Меняем текст кнопки
-                walkBtn.className = 'btn btn-stop';   // Меняем стиль кнопки
-
-                if (lastPingResponse) {               // Если был прошлый ответ
-                    updateUI(lastPingResponse);        // Показываем его данные
-                }
-
-                // Проверяем, доступна ли геолокация
-                if (navigator.geolocation) {
-                    // watchPosition — подписываемся на обновления GPS (ОДНО разрешение)
-                    watchId = navigator.geolocation.watchPosition(
-                        onPosition,         // Что делать при новой позиции
-                        onPositionError,    // Что делать при ошибке
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-                        // enableHighAccuracy — использовать GPS (не по вышкам сотовой)
-                        // timeout — ждать не больше 10 секунд
-                        // maximumAge — использовать кеш не старше 5 секунд
-                    );
-                } else {
-                    // Геолокация недоступна
-                    showToast('Geolocation not available');
-                    walking = false;                         // Отменяем прогулку
-                    setStatus('idle', 'Idle');
-                    walkBtn.textContent = 'Start Walking';
-                    walkBtn.className = 'btn btn-start';
-                    return;
-                }
-
-                // Запускаем интервал — каждые 15 секунд отправлять пинг
-                intervalId = setInterval(sendPing, 15000);
-            }
-
-            // ── Функция: остановить прогулку ──
-
-            function stopWalking() {
-                if (!walking) return;    // Если не идём — ничего не делаем
-                walking = false;
-
-                clearInterval(intervalId);  // Останавливаем интервал пингов
-                intervalId = null;
-
-                if (watchId !== null) {         // Если GPS-наблюдение активно
-                    navigator.geolocation.clearWatch(watchId);  // Отписываемся
-                    watchId = null;
-                }
-                currentPos = null;              // Очищаем позицию
-
-                setStatus('idle', 'Idle');
-                walkBtn.textContent = 'Start Walking';
-                walkBtn.className = 'btn btn-start';
-            }
-
-            // ── Функция: купить бафф (POST /shop/buy) ──
-
-            async function buyBuff(buffId) {
                 var initData = TG ? TG.initData : '';
                 if (!initData) {
                     showToast('No Telegram init data');
@@ -656,110 +198,99 @@
                 }
 
                 try {
-                    var res = await fetch('/shop/buy', {
+                    var res = await fetch('/walk/ping', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             init_data: initData,
-                            item_id: buffId,  // ID баффа, который хотим купить
+                            lat: currentPos.lat,
+                            lon: currentPos.lon,
                         }),
                     });
 
                     var data = await res.json();
 
-                    if (!res.ok) {                     // Ошибка от сервера
-                        showToast(data.detail || 'Purchase failed');
+                    if (!res.ok) {
+                        showToast(data.detail || 'Ping error');
                         return;
                     }
 
-                    balanceEl.textContent = data.balance;        // Обновить баланс
-                    updateBuffsUI(data.active_buffs);            // Обновить баффы
-                    showToast('Purchased!');
+                    lastPingResponse = data;
+                    updateUI(data);
 
-                    // Обновляем lastPingResponse, чтобы при следующем пинге UI не сбросился
-                    if (lastPingResponse) {
-                        lastPingResponse.total_coins = data.balance;
-                        lastPingResponse.active_buffs = data.active_buffs;
+                    if (data.coins_earned > 0) {
+                        showToast('+' + data.coins_earned + ' coins');
                     }
                 } catch (err) {
                     showToast('Network error');
                 }
             }
 
-            // ── Обработчик: клик по кнопке Start/Stop Walking ──
+            function onPosition(pos) {
+                currentPos = {
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                };
+            }
+
+            function onPositionError(err) {
+                var msg = 'GPS error';
+                if (err.code === 1) msg = 'GPS permission denied';
+                else if (err.code === 2) msg = 'GPS unavailable';
+                else if (err.code === 3) msg = 'GPS timeout';
+                showToast(msg);
+            }
+
+            function startWalking() {
+                if (walking) return;
+                walking = true;
+
+                setStatus('walking', 'Walking');
+                walkBtn.textContent = 'Stop Walking';
+                walkBtn.className = 'btn btn-stop';
+
+                if (lastPingResponse) updateUI(lastPingResponse);
+
+                if (navigator.geolocation) {
+                    watchId = navigator.geolocation.watchPosition(
+                        onPosition, onPositionError,
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+                    );
+                } else {
+                    showToast('Geolocation not available');
+                    walking = false;
+                    setStatus('idle', 'Idle');
+                    walkBtn.textContent = 'Start Walking';
+                    walkBtn.className = 'btn btn-start';
+                    return;
+                }
+
+                intervalId = setInterval(sendPing, 15000);
+            }
+
+            function stopWalking() {
+                if (!walking) return;
+                walking = false;
+
+                clearInterval(intervalId);
+                intervalId = null;
+
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                currentPos = null;
+
+                setStatus('idle', 'Idle');
+                walkBtn.textContent = 'Start Walking';
+                walkBtn.className = 'btn btn-start';
+            }
 
             walkBtn.addEventListener('click', function () {
-                if (walking) {
-                    stopWalking();   // Если идём — остановить
-                } else {
-                    startWalking();  // Если стоим — начать
-                }
+                if (walking) stopWalking();
+                else startWalking();
             });
-
-            // ── Обработчик: клик по баффу (покупка) ──
-
-            buffItems.forEach(function (el) {
-                el.addEventListener('click', function () {
-                    var buffId = el.dataset.buffId;  // Берём ID баффа из data-атрибута
-
-                    // Если бафф уже активен — не даём купить снова
-                    if (activeBuffs.indexOf(buffId) !== -1) {
-                        showToast('Already active');
-                        return;
-                    }
-
-                    buyBuff(buffId);  // Покупаем
-                });
-            });
-
-            // ── Пасхалка: админ-консоль (5 быстрых кликов по балансу) ──
-
-            balanceCard.addEventListener('click', function () {
-                clickCount++;                       // Увеличиваем счётчик кликов
-                clearTimeout(clickTimer);            // Сбрасываем прошлый таймер
-
-                // Если за 1.2 секунды не было нового клика — сбрасываем счётчик
-                clickTimer = setTimeout(function () { clickCount = 0; }, 1200);
-
-                if (clickCount >= 5) {              // 5 кликов подряд!
-                    clickCount = 0;                  // Сбрасываем счётчик
-                    var command = prompt('Admin console:');  // Показываем окно ввода
-
-                    if (command && command.trim()) {          // Если ввели не пустую строку
-                        var initData = TG ? TG.initData : '';
-
-                        // Отправляем команду на админ-эндпоинт
-                        fetch('https://walk-to-earn.onrender.com/admin/console', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                init_data: initData,
-                                command: command.trim(),
-                            }),
-                        })
-                            // .then — цепочка Promise (обработка ответа)
-                            .then(function (r) {
-                                return r.json().then(function (d) {
-                                    return { ok: r.ok, data: d };
-                                });
-                            })
-                            .then(function (ref) {
-                                if (ref.ok) {
-                                    showToast(ref.data.message || 'OK');
-                                    // Если сервер вернул новый баланс — обновляем
-                                    if (ref.data.new_balance !== undefined) {
-                                        balanceEl.textContent = ref.data.new_balance;
-                                    }
-                                } else {
-                                    showToast(ref.data.detail || 'Admin error');
-                                }
-                            })
-                            .catch(function () { showToast('Admin request failed'); });
-                    }
-                }
-            });
-
-        })();  // Конец самовызывающейся функции
+        })();
     </script>
 </body>
 </html>
