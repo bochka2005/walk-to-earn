@@ -176,7 +176,7 @@
 
             function updateUI(data) {
                 balanceEl.textContent = data.total_coins ?? 0;
-                distDisplay.textContent = (data.distance_m ?? 0).toFixed(1);
+                distDisplay.textContent = (data.total_distance_m ?? 0).toFixed(1);
                 speedDisplay.textContent = (data.speed_kmh ?? 0).toFixed(1);
 
                 if (data.status === 'speed_limit_exceeded') {
@@ -297,6 +297,7 @@
                     });
                     var data = await res.json();
                     if (res.ok) {
+                        lastPingResponse = data;
                         balanceEl.textContent = data.balance;
                         distDisplay.textContent = data.total_distance_m.toFixed(1);
                     }

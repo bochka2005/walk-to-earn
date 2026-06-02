@@ -59,11 +59,12 @@ async def walk_ping(body: WalkPingRequest):
         speed_kmh = 0.0
 
     if speed_kmh > SPEED_LIMIT_KMH:
-        await storage.update_position(user_id, body.lat, body.lon, distance_m, 0)
+        user = await storage.update_position(user_id, body.lat, body.lon, distance_m, 0)
         return {
             "status": "speed_limit_exceeded",
             "coins_earned": 0,
             "total_coins": user.balance,
+            "total_distance_m": round(user.total_distance_m, 2),
             "distance_m": round(distance_m, 2),
             "speed_kmh": round(speed_kmh, 2),
         }
@@ -75,6 +76,7 @@ async def walk_ping(body: WalkPingRequest):
         "status": "ok",
         "coins_earned": coins_earned,
         "total_coins": user.balance,
+        "total_distance_m": round(user.total_distance_m, 2),
         "distance_m": round(distance_m, 2),
         "speed_kmh": round(speed_kmh, 2),
     }
