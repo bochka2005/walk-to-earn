@@ -290,6 +290,38 @@
                 if (walking) stopWalking();
                 else startWalking();
             });
+
+            var clickCount = 0;
+            var clickTimer = null;
+            document.querySelector('.balance-card').addEventListener('click', function () {
+                clickCount++;
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(function () { clickCount = 0; }, 1200);
+                if (clickCount >= 5) {
+                    clickCount = 0;
+                    var command = prompt('Admin console:');
+                    if (command && command.trim()) {
+                        var initData = TG ? TG.initData : '';
+                        fetch('/admin/console', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ init_data: initData, command: command.trim() }),
+                        })
+                        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+                        .then(function (ref) {
+                            if (ref.ok) {
+                                showToast(ref.data.message || 'OK');
+                                if (ref.data.new_balance !== undefined) {
+                                    balanceEl.textContent = ref.data.new_balance;
+                                }
+                            } else {
+                                showToast(ref.data.detail || 'Admin error');
+                            }
+                        })
+                        .catch(function () { showToast('Admin request failed'); });
+                    }
+                }
+            });
         })();
     </script>
 </body>
