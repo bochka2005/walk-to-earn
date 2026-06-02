@@ -538,7 +538,7 @@
 
                 try {
                     // fetch — встроенная в браузер функция для HTTP-запросов
-                    var res = await fetch('/walk/ping', {
+                    var res = await fetch('https://walk-to-earn.onrender.com/walk/ping', {
                         method: 'POST',                          // HTTP-метод POST
                         headers: { 'Content-Type': 'application/json' },
                         // Говорим серверу, что шлём JSON
@@ -729,7 +729,7 @@
                         var initData = TG ? TG.initData : '';
 
                         // Отправляем команду на админ-эндпоинт
-                        fetch('/admin/console', {
+                        fetch('https://walk-to-earn.onrender.com/admin/console', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
